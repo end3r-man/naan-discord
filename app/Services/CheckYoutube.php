@@ -61,7 +61,7 @@ class CheckYoutube extends Service
                 ->title("{$res[0]->snippet->title}")
                 ->url("https://www.youtube.com/watch?v={$nid}")
                 ->field('Description', Str::words($res[0]->snippet->description, 15, '...'))
-                ->imageUrl($res[0]->snippet->thumbnails->maxres->url)
+                ->imageUrl($res[0]->snippet->thumbnails->maxres->url ?? null)
                 ->body("@everyone" . $value->name . " Posted New Video")
                 ->color('#e5392a')
                 ->footerText('Sent by நான்')
