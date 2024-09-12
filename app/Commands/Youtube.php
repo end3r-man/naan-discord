@@ -211,7 +211,7 @@ class Youtube extends Command
 
     protected function searchyt($id)
     {
-        $apiKey = env('YOUTUBE_API');
+        $apiKey = env("YOUTUBE_API_".rand(1, 2));
 
         $client = new Client();
         $client->setDeveloperKey($apiKey);

@@ -28,20 +28,8 @@ class CheckYoutube extends Service
             $setting = UserSetting::where('for', 'Youtube')->where('guild_id', $value->guild_id)->first();
 
             if (!is_null($setting) && $setting->state) {
-                $apiKey = env('YOUTUBE_API');
 
-                $client = new Client();
-                $client->setDeveloperKey($apiKey);
-                $service = new YouTube($client);
-
-                try {
-                    $res = $service->playlistItems->listPlaylistItems(
-                        ['part' => 'snippet', 'contentDetails'],
-                        ['playlistId' => $value->youtube_id]
-                    );
-                } catch (\Throwable $th) {
-                    $this->console()->log($th);
-                }
+                $res = $this->GetNewVideo($value);
 
                 $this->HandleMessage($res, $value);
             }
@@ -53,19 +41,21 @@ class CheckYoutube extends Service
      *
      * @param  object $res
      * @param  object $value
-     * @return message
      */
     private function HandleMessage($res, $value): void
     {
         $nid = $res[0]->contentDetails->videoId;
 
         if ($value->last != $nid) {
+
+            $type = $this->GetVideoType($nid);
+
             $value->update([
                 'last' => $nid
             ]);
 
             $this
-                ->message("{$value->name} published a new video!")
+                ->message("{$value->name} {$type}!")
                 ->authorName($value->name)
                 ->authorIcon($value->profile)
                 ->title("{$res[0]->snippet->title}")
@@ -77,5 +67,46 @@ class CheckYoutube extends Service
                 ->footerText('Sent by நான்')
                 ->send($value->channel->channel_id);
         }
+    }
+
+    protected function GetNewVideo($value)
+    {
+        $apiKey = env("YOUTUBE_API_" . rand(1, 2));
+
+        $client = new Client();
+        $client->setDeveloperKey($apiKey);
+        $service = new YouTube($client);
+
+        try {
+            $res = $service->playlistItems->listPlaylistItems(
+                ['part' => 'snippet', 'contentDetails'],
+                ['playlistId' => $value->youtube_id]
+            );
+        } catch (\Throwable $th) {
+            $this->console()->log($th);
+        }
+
+        return $res;
+    }
+
+    protected function GetVideoType($nid)
+    {
+        $apiKey = env("YOUTUBE_API_" . rand(1, 2));
+
+        $client = new Client();
+        $client->setDeveloperKey($apiKey);
+        $service = new YouTube($client);
+
+        try {
+            $re = $service->videos->listVideos(
+                ['part' => 'snippet'],
+                ['id' => $nid]
+            );
+        } catch (\Throwable $th) {
+            $this->console()->log($th);
+        }
+
+
+        return ($re->items[0]->snippet->liveBroadcastContent == 'live') ? 'is streaming now' : 'published a new video';
     }
 }
